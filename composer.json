@@ -1,0 +1,27 @@
+{
+    "name": "simplon/gplus",
+    "description": "Google+ API Library",
+    "homepage": "https://github.com/fightbulc/simplon_gplus",
+    "version": "0.0.1",
+    "type": "library",
+    "keywords": ["google plus", "google+", "api", "http"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tino Ehrich",
+            "email": "opensource@efides.com",
+            "role": "developer"
+        }
+    ],
+
+    "require": {
+        "php": ">=5.4",
+        "fightbulc/php_curl": "1.0.*"
+    },
+
+    "autoload": {
+        "psr-0": {
+            "Simplon\\Gplus": "src/"
+        }
+    }
+}
