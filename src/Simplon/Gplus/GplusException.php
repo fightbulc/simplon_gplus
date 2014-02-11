@@ -1,33 +1,32 @@
 <?php
 
-    namespace Simplon\Facebook;
+    namespace Simplon\Gplus;
 
-    class FacebookException extends \Exception
+    class GplusException extends \Exception
     {
-        protected $type;
-        protected $subcode;
+        protected $errors;
 
         // ######################################
 
-        public function __construct($message, $type, $code = 0, $subcode = 0)
+        /**
+         * @param string $message
+         * @param int $code
+         * @param array $errors
+         */
+        public function __construct($message, $code = 0, $errors = [])
         {
             $this->message = $message;
-            $this->type = $type;
             $this->code = $code;
-            $this->subcode = $subcode;
+            $this->errors = $errors;
         }
 
         // ######################################
 
-        public function getType()
+        /**
+         * @return array
+         */
+        public function getErrors()
         {
-            return $this->type;
-        }
-
-        // ######################################
-
-        public function getSubcode()
-        {
-            return $this->subcode;
+            return $this->errors;
         }
     }

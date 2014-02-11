@@ -1,553 +1,173 @@
 <?php
 
-    namespace Simplon\Facebook;
+    namespace Simplon\Gplus;
 
-    class Facebook
+    use Simplon\Gplus\Vo\GplusAuthVo;
+    use Simplon\Gplus\Vo\GplusPersonVo;
+    use Simplon\Gplus\Vo\GplusRequestAccessTokenVo;
+    use Simplon\Gplus\Vo\GplusVerifyTokenVo;
+
+    class Gplus
     {
-        private $_appId;
-        private $_appSecret;
-        private $_appPermissions;
-        private $_graphUrl = "https://graph.facebook.com";
+        protected $_authVo;
 
-        private $_classErrorCode = 10000;
-        private $_fetchErrorCode = 20000;
+        protected $_scopeValid = [
+            GplusConstants::AUTH_SCOPE_EMAIL,
+            GplusConstants::AUTH_SCOPE_PROFILE,
+        ];
 
-        private $_eventFields = ['name', 'start_time', 'end_time', 'description', 'location', 'location_id'];
-
-        // ##########################################
+        // ######################################
 
         /**
-         * @param $appId
-         *
-         * @return Facebook
+         * @param GplusAuthVo $authVo
          */
-        public function setAppId($appId)
+        public function __construct(GplusAuthVo $authVo)
         {
-            $this->_appId = $appId;
-
-            return $this;
-        }
-
-        // ##########################################
-
-        /**
-         * @return mixed
-         */
-        public function getAppId()
-        {
-            return $this->_appId;
-        }
-
-        // ##########################################
-
-        /**
-         * @param $appSecret
-         *
-         * @return Facebook
-         */
-        public function setAppSecret($appSecret)
-        {
-            $this->_appSecret = $appSecret;
-
-            return $this;
-        }
-
-        // ##########################################
-
-        /**
-         * @return mixed
-         */
-        public function getAppSecret()
-        {
-            return $this->_appSecret;
-        }
-
-        // ##########################################
-
-        /**
-         * @param array $appPermissions
-         *
-         * @return Facebook
-         */
-        public function setAppPermissions(array $appPermissions)
-        {
-            $this->_appPermissions = $appPermissions;
-
-            return $this;
-        }
-
-        // ##########################################
-
-        /**
-         * @return mixed
-         */
-        public function getAppPermissions()
-        {
-            return $this->_appPermissions;
-        }
-
-        // ##########################################
-
-        /**
-         * @return array
-         */
-        public function getFacebookConfig()
-        {
-            return [
-                'appId'       => $this->getAppId(),
-                'secret'      => $this->getAppSecret(),
-                'permissions' => $this->getAppPermissions(),
-            ];
-        }
-
-        // ##########################################
-
-        /**
-         * @return bool|string
-         */
-        public function getAppAccessToken()
-        {
-            // request params
-            $params = [
-                'client_id'     => $this->getAppId(),
-                'client_secret' => $this->getAppSecret(),
-                'grant_type'    => 'client_credentials',
-            ];
-
-            $response = $this->_requestGraph('/oauth/access_token', $params);
-
-            if (isset($response['access_token']))
-            {
-                return (string)$response['access_token'];
-            }
-
-            return FALSE;
-        }
-
-        // ##########################################
-
-        /**
-         * @param $accessToken
-         *
-         * @return bool|string
-         */
-        public function getExtendedAccessToken($accessToken)
-        {
-            // request params
-            $params = [
-                'client_id'         => $this->getAppId(),
-                'client_secret'     => $this->getAppSecret(),
-                'grant_type'        => 'fb_exchange_token',
-                'fb_exchange_token' => $accessToken,
-            ];
-
-            $response = $this->_requestGraph('/oauth/access_token', $params);
-
-            if (isset($response['access_token']))
-            {
-                return (string)$response['access_token'];
-            }
-
-            return FALSE;
-        }
-
-        // ##########################################
-
-        /**
-         * @param $accessToken
-         * @param bool $retry
-         *
-         * @return FacebookUserGraphVo
-         * @throws FacebookException
-         */
-        public function getUserData($accessToken, $retry = TRUE)
-        {
-            try
-            {
-                // request params
-                $params = [
-                    'access_token' => $accessToken
-                ];
-
-                $data = $this->_requestGraph('/me', $params);
-
-                return new FacebookUserGraphVo($data);
-            }
-            catch (FacebookException $e)
-            {
-                // retry in case facebook wasnt quick enough to update accessToken remotely
-                if ($retry !== FALSE && $e->getCode() !== 190)
-                {
-                    sleep(3); // lets be sure and wait 3 seconds
-
-                    return $this->getUserData($accessToken, FALSE);
-                }
-
-                throw new FacebookException($e->getMessage(), 'FetchError', $this->_fetchErrorCode);
-            }
-        }
-
-        // ##########################################
-
-        /**
-         * @param $accessToken
-         *
-         * @return FacebookUserFriendVo[]|bool
-         */
-        public function getUserFriends($accessToken)
-        {
-            $params = [
-                'access_token' => $accessToken
-            ];
-
-            $data = $this->_requestGraph('/me/friends', $params);
-
-            if (isset($data['data']))
-            {
-                $facebookUserFriendVoMany = [];
-
-                foreach ($data['data'] as $friend)
-                {
-                    $facebookUserFriendVoMany[] = new FacebookUserFriendVo($friend);
-                }
-
-                return $facebookUserFriendVoMany;
-            }
-
-            return FALSE;
-        }
-
-        // ##########################################
-
-        /**
-         * @param $accessToken
-         *
-         * @return FacebookPageGraphVo[]
-         */
-        public function getUserAccountsData($accessToken)
-        {
-            $params = [
-                'access_token' => $accessToken
-            ];
-
-            $data = $this->_requestGraph('/me/accounts', $params);
-
-            $pages = [];
-
-            foreach ($data['data'] as $page)
-            {
-                $pages[] = new FacebookPageGraphVo($page);
-            }
-
-            return $pages;
-        }
-
-        // ##########################################
-
-        /**
-         * @param $urlname
-         * @param $accessToken
-         *
-         * @return FacebookPageGraphVo
-         */
-        public function getPageData($urlname, $accessToken)
-        {
-            $params = [
-                'access_token' => $accessToken,
-            ];
-
-            $data = $this->_requestGraph("/$urlname", $params);
-
-            return new FacebookPageGraphVo($data);
-        }
-
-        // ##########################################
-
-        /**
-         * @param string $facebookId
-         * @param array $data
-         * @param string $accessToken
-         *
-         * @return array|mixed
-         */
-        public function createEvent($facebookId, $data, $accessToken)
-        {
-            $params = [
-                'access_token' => $accessToken,
-            ];
-
-            foreach ($this->_eventFields as $field)
-            {
-                if (isset($data[$field]))
-                {
-                    $params[$field] = $data[$field];
-                }
-            }
-
-            return $this->_submitToGraph($facebookId . '/events', $params);
-        }
-
-        // ##########################################
-
-        /**
-         * @param $facebookId
-         * @param $accessToken
-         *
-         * @return array|bool
-         */
-        public function getEventAttendingIdsMany($facebookId, $accessToken)
-        {
-            $params = [
-                'access_token' => $accessToken,
-                'fields'       => 'attending.limit(99999).fields(id)',
-            ];
-
-            $data = $this->_requestGraph("/$facebookId", $params);
-
-            if (is_array($data) && is_array($data['attending']) && is_array($data['attending']['data']))
-            {
-                $idsMany = [];
-
-                foreach ($data['attending']['data'] as $item)
-                {
-                    $idsMany[] = $item['id'];
-                }
-
-                return $idsMany;
-            }
-
-            return FALSE;
-        }
-
-        // ##########################################
-
-        /**
-         * @param $accessToken
-         * @param $facebookEventId
-         *
-         * @return array|mixed
-         */
-        public function setEventAttending($facebookEventId, $accessToken)
-        {
-            $params = [
-                'access_token' => $accessToken
-            ];
-
-            return $this->_submitToGraph($facebookEventId . '/attending', $params);
-        }
-
-        // ##########################################
-
-        /**
-         * @param $facebookEventId
-         * @param $accessToken
-         *
-         * @return array|mixed
-         */
-        public function setEventDeclined($facebookEventId, $accessToken)
-        {
-            $params = [
-                'access_token' => $accessToken
-            ];
-
-            return $this->_submitToGraph($facebookEventId . '/declined', $params);
-        }
-
-        // ##########################################
-
-        /**
-         * @param $accessToken
-         * @param $actionType
-         * @param $objectType
-         * @param $objectValue
-         *
-         * @return bool
-         * @throws FacebookException
-         */
-        public function sendOpenGraphItem($accessToken, $actionType, $objectType, $objectValue)
-        {
-            $actionType = strtolower($actionType);
-            $objectType = strtolower($objectType);
-
-            if (strpos($actionType, ':') === FALSE)
-            {
-                throw new FacebookException(__METHOD__ . ": OG action-type format is invalid. Sample valid format: myapp:like", 'ClassError', $this->_classErrorCode);
-            }
-
-            $params = [
-                'access_token' => $accessToken,
-                'method'       => 'POST',
-                $objectType    => $objectValue,
-            ];
-
-            $data = $this->_submitToGraph("/me/{$actionType}", $params);
-
-            // return graph id
-            if (isset($data['id']))
-            {
-                return $data['id'];
-            }
-
-            return FALSE;
-        }
-
-        // ##########################################
-
-        /**
-         * @param $accessToken
-         * @param $graphItemId
-         *
-         * @return array|mixed
-         * @throws FacebookException
-         */
-        public function removeOpenGraphItem($accessToken, $graphItemId)
-        {
-            if (empty($graphItemId))
-            {
-                throw new FacebookException(__METHOD__ . ": Missing graphItemId", 'ClassError', $this->_classErrorCode);
-            }
-
-            $params = [
-                'access_token' => $accessToken,
-                'method'       => 'DELETE',
-            ];
-
-            return $this->_submitToGraph("/{$graphItemId}", $params);
-        }
-
-        // ##########################################
-
-        /**
-         * @param $response
-         *
-         * @return array|mixed
-         */
-        protected function _parseGraphResponse($response)
-        {
-            // try json
-            $data = json_decode($response, TRUE);
-
-            // get data from string if NOT-JSON response
-            if (is_null($data))
-            {
-                $data = [];
-                parse_str($response, $data);
-            }
-
-            return $data;
-        }
-
-        // ##########################################
-
-        /**
-         * @param $resourcePath
-         * @param array $params
-         *
-         * @return array|mixed
-         * @throws FacebookException
-         */
-        protected function _requestGraph($resourcePath, array $params)
-        {
-            // make sure that we have what we need
-            if (!$resourcePath)
-            {
-                throw new FacebookException("Cannot request graph due to missing resourcePath.", 'ClassError', $this->_classErrorCode);
-            }
-
-            // build URL
-            $graphUrl = trim($this->_graphUrl, '/') . '/' . trim($resourcePath, '/') . '?' . http_build_query($params);
-
-            // request FB graph
-            $response = \CURL::init($graphUrl)
-                ->setReturnTransfer(TRUE)
-                ->execute();
-
-            // parse response
-            $data = $this->_parseGraphResponse($response);
-
-            // handle error response
-            if (isset($data['error']))
-            {
-                $this->_handleErrorResponse($data);
-            }
-
-            // return data
-            return $data;
-        }
-
-        // ##########################################
-
-        /**
-         * @param $resourcePath
-         * @param array $params
-         *
-         * @return array|mixed
-         * @throws FacebookException
-         */
-        protected function _submitToGraph($resourcePath, array $params)
-        {
-            // make sure that we have what we need
-            if (!$resourcePath)
-            {
-                throw new FacebookException("Cannot submit to graph due to missing resourcePath.", 'ClassError', $this->_classErrorCode);
-            }
-
-            // build URL
-            $graphUrl = trim($this->_graphUrl, '/') . '/' . trim($resourcePath, '/');
-
-            // request FB graph
-            $response = \CURL::init($graphUrl)
-                ->setPost(TRUE)
-                ->setPostFields($params)
-                ->setReturnTransfer(TRUE)
-                ->execute();
-
-            // parse response
-            $data = $this->_parseGraphResponse($response);
-
-            // handle error response
-            if (isset($data['error']))
-            {
-                $this->_handleErrorResponse($data);
-            }
-
-            return $data;
+            $this->_authVo = $authVo;
         }
 
         // ######################################
 
         /**
-         * @param $response
-         *
-         * @throws FacebookException
+         * @return GplusAuthVo
          */
-        protected function _handleErrorResponse($response)
+        protected function _getAuthVo()
         {
-            $errorMessage = NULL;
-            $errorType = NULL;
-            $errorCode = NULL;
-            $errorSubcode = NULL;
+            return $this->_authVo;
+        }
 
-            if (isset($response['error']['message']))
+        // ######################################
+
+        /**
+         * @param array $scope
+         *
+         * @return string
+         * @throws GplusException
+         */
+        public function getAuthUrl($scope = [])
+        {
+            if (empty($scope))
             {
-                $errorMessage = $response['error']['message'];
+                throw new GplusException(
+                    GplusErrorConstants::AUTH_MISSING_SCOPE_MESSAGE,
+                    GplusErrorConstants::AUTH_MISSING_SCOPE_CODE
+                );
             }
 
-            if (isset($response['error']['type']))
+            $clientId = $this
+                ->_getAuthVo()
+                ->getClientId();
+
+            $urlRedirect = $this->_getAuthVo()
+                ->getUrlRedirect();
+
+            $params = [
+                'scope'         => join(' ', $scope),
+                'redirect_uri'  => $urlRedirect,
+                'client_id'     => $clientId,
+                'state'         => 'auth',
+                'response_type' => 'code',
+                'access_type'   => 'offline',
+            ];
+
+            return trim(GplusConstants::DOMAIN_ACCOUNTS, '/') . '/' . trim(GplusConstants::PATH_OAUTH_ACCOUNT) . '?' . http_build_query($params);
+        }
+
+        // ######################################
+
+        /**
+         * @param $code
+         *
+         * @return bool|GplusRequestAccessTokenVo
+         * @throws GplusException
+         */
+        public function requestAccessToken($code)
+        {
+            if (empty($code))
             {
-                $errorType = $response['error']['type'];
+                throw new GplusException(
+                    GplusErrorConstants::AUTH_MISSING_CODE_MESSAGE,
+                    GplusErrorConstants::AUTH_MISSING_CODE_CODE
+                );
             }
 
-            if (isset($response['error']['code']))
+            $clientId = $this
+                ->_getAuthVo()
+                ->getClientId();
+
+            $clientSecret = $this
+                ->_getAuthVo()
+                ->getClientSecret();
+
+            $urlRedirect = $this->_getAuthVo()
+                ->getUrlRedirect();
+
+            $params = [
+                'code'          => $code,
+                'redirect_uri'  => $urlRedirect,
+                'client_id'     => $clientId,
+                'client_secret' => $clientSecret,
+                'grant_type'    => 'authorization_code',
+            ];
+
+            $response = GplusRequest::post(GplusConstants::PATH_OAUTH_TOKEN, $params);
+
+            if ($response !== FALSE)
             {
-                $errorCode = $response['error']['code'];
+                return new GplusRequestAccessTokenVo($response);
             }
 
-            if (isset($response['error']['error_subcode']))
+            return FALSE;
+        }
+
+        // ######################################
+
+        /**
+         * @param $accessToken
+         *
+         * @return bool|GplusVerifyTokenVo
+         */
+        public function verifyAccessToken($accessToken)
+        {
+            $params = [
+                'access_token' => $accessToken,
+            ];
+
+            $response = GplusRequest::get(GplusConstants::PATH_VERIFY_ACCESS_TOKEN, $params);
+
+            if ($response !== FALSE)
             {
-                $errorSubcode = $response['error']['error_subcode'];
+                return new GplusVerifyTokenVo($response);
             }
 
-            throw new FacebookException($errorMessage, $errorType, $errorCode, $errorSubcode);
+            return FALSE;
+        }
+
+        // ######################################
+
+        /**
+         * @param $userId
+         * @param $accessToken
+         *
+         * @return bool|GplusPersonVo
+         */
+        public function getUserDetails($userId, $accessToken)
+        {
+            $params = [
+                'access_token' => $accessToken,
+            ];
+
+            // build path with userId
+            $path = str_replace('{userId}', $userId, GplusConstants::PATH_PEOPLE_DETAILS);
+
+            // request
+            $response = GplusRequest::get($path, $params);
+
+            if ($response !== FALSE)
+            {
+                return new GplusPersonVo($response);
+            }
+
+            return FALSE;
         }
     }
