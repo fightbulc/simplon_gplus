@@ -4,7 +4,7 @@
     "homepage": "https://github.com/fightbulc/simplon_gplus",
     "version": "0.0.1",
     "type": "library",
-    "keywords": ["google plus", "google+", "api", "http"],
+    "keywords": ["google plus", "api", "http"],
     "license": "MIT",
     "authors": [
         {
