@@ -65,11 +65,7 @@
                 {
                     if (isset($response['error']))
                     {
-                        throw new GplusException(
-                            $response['error']['message'],
-                            $response['error']['code'],
-                            $response['error']['errors']
-                        );
+                        throw new GplusException($response);
                     }
 
                     return (array)$response;
