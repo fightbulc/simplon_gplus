@@ -266,7 +266,8 @@
                 {
                     return (new GplusPersonVo($response))
                         ->setAccessToken($gplusVerifyTokenVo->getAccessToken())
-                        ->setRefreshToken($refreshToken);
+                        ->setRefreshToken($refreshToken)
+                        ->setIsNewAccessToken($gplusVerifyTokenVo->isNewAccessToken());
                 }
             }
             catch (GplusException $e)

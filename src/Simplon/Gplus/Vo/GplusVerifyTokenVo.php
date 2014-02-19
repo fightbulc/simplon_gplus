@@ -80,7 +80,7 @@
         /**
          * @return bool
          */
-        public function getIsNewAccessToken()
+        public function isNewAccessToken()
         {
             return $this->_isNewAccessToken === TRUE ? TRUE : FALSE;
         }

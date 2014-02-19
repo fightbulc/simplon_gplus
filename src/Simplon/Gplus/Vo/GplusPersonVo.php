@@ -9,6 +9,7 @@
         protected $_rawData;
         protected $_accessToken;
         protected $_refreshToken;
+        protected $_isNewAccessToken;
         protected $_id;
         protected $_displayName;
         protected $_emails;
@@ -110,6 +111,30 @@
         public function getRefreshToken()
         {
             return (string)$this->_refreshToken;
+        }
+
+        // ######################################
+
+        /**
+         * @param mixed $isNewAccessToken
+         *
+         * @return GplusPersonVo
+         */
+        public function setIsNewAccessToken($isNewAccessToken)
+        {
+            $this->_isNewAccessToken = $isNewAccessToken;
+
+            return $this;
+        }
+
+        // ######################################
+
+        /**
+         * @return bool
+         */
+        public function isNewAccessToken()
+        {
+            return $this->_isNewAccessToken === TRUE ? TRUE : FALSE;
         }
 
         // ######################################
