@@ -155,11 +155,21 @@
                 'grant_type'    => 'refresh_token',
             ];
 
-            $response = GplusRequest::post(GplusConstants::PATH_OAUTH_TOKEN, $params);
-
-            if ($response !== FALSE)
+            try
             {
-                return new GplusRefreshAccessTokenVo($response);
+                $response = GplusRequest::post(GplusConstants::PATH_OAUTH_TOKEN, $params);
+
+                if ($response !== FALSE)
+                {
+                    return new GplusRefreshAccessTokenVo($response);
+                }
+            }
+            catch (GplusException $e)
+            {
+                throw new GplusException(
+                    GplusErrorConstants::FAILED_REFRESHING_ACCESSTOKEN_MESSAGE . $e->getErrors()['error'],
+                    GplusErrorConstants::FAILED_REFRESHING_ACCESSTOKEN_CODE
+                );
             }
 
             return FALSE;
@@ -169,11 +179,12 @@
 
         /**
          * @param $accessToken
+         * @param null $refreshToken
          *
          * @return bool|GplusVerifyTokenVo
          * @throws GplusException
          */
-        public function verifyAccessToken($accessToken)
+        public function verifyAccessToken($accessToken, $refreshToken = NULL)
         {
             $params = [
                 'access_token' => $accessToken,
@@ -185,11 +196,35 @@
 
                 if ($response !== FALSE)
                 {
-                    return new GplusVerifyTokenVo($response);
+                    return (new GplusVerifyTokenVo($response))->setAccessToken($accessToken);
                 }
             }
             catch (GplusException $e)
             {
+                /**
+                 * If we reached this point then our accessToken might be invalid.
+                 * Therefore, try to refresh accessToken if a refreshToken was passed along.
+                 *
+                 * Else, we just throw an Exception.
+                 */
+
+                try
+                {
+                    if ($refreshToken !== NULL)
+                    {
+                        // try to refresh accessToken
+                        $gplusRefreshAccessTokenVo = $this->refreshAccessToken($refreshToken);
+
+                        // verify again
+                        return $this
+                            ->verifyAccessToken($gplusRefreshAccessTokenVo->getAccessToken())
+                            ->setIsNewAccessToken(TRUE);
+                    }
+                }
+                catch (GplusException $e)
+                {
+                }
+
                 throw new GplusException(
                     GplusErrorConstants::AUTH_INVALID_ACCESSTOKEN_MESSAGE,
                     GplusErrorConstants::AUTH_INVALID_ACCESSTOKEN_CODE,
@@ -204,18 +239,19 @@
 
         /**
          * @param $accessToken
+         * @param $refreshToken
          *
          * @return bool|GplusPersonVo
          * @throws GplusException
          */
-        public function getUserDetails($accessToken)
+        public function getUserDetails($accessToken, $refreshToken)
         {
-            $gplusVerifyTokenVo = $this->verifyAccessToken($accessToken);
+            $gplusVerifyTokenVo = $this->verifyAccessToken($accessToken, $refreshToken);
 
             // ----------------------------------
 
             $params = [
-                'access_token' => $accessToken,
+                'access_token' => $gplusVerifyTokenVo->getAccessToken(),
             ];
 
             // build path with userId
@@ -228,7 +264,9 @@
 
                 if ($response !== FALSE)
                 {
-                    return new GplusPersonVo($response);
+                    return (new GplusPersonVo($response))
+                        ->setAccessToken($gplusVerifyTokenVo->getAccessToken())
+                        ->setRefreshToken($refreshToken);
                 }
             }
             catch (GplusException $e)

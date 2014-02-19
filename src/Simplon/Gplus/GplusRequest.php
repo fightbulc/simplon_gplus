@@ -106,7 +106,7 @@
                         throw new GplusException(
                             GplusErrorConstants::REQUEST_ERROR_MESSAGE,
                             GplusErrorConstants::REQUEST_ERROR_CODE,
-                            $responseJson
+                            $response
                         );
                     }
 

@@ -14,6 +14,8 @@
         protected $_email;
         protected $_verifiedEmail;
         protected $_accessType;
+        protected $_accessToken;
+        protected $_isNewAccessToken;
 
         // ######################################
 
@@ -33,6 +35,54 @@
                 ->setConditionByKey('verified_email', function ($val) { $this->setVerifiedEmail($val); })
                 ->setConditionByKey('access_type', function ($val) { $this->setAccessType($val); })
                 ->run();
+        }
+
+        // ######################################
+
+        /**
+         * @param mixed $accessToken
+         *
+         * @return GplusVerifyTokenVo
+         */
+        public function setAccessToken($accessToken)
+        {
+            $this->_accessToken = $accessToken;
+
+            return $this;
+        }
+
+        // ######################################
+
+        /**
+         * @return string
+         */
+        public function getAccessToken()
+        {
+            return (string)$this->_accessToken;
+        }
+
+        // ######################################
+
+        /**
+         * @param mixed $isNewAccessToken
+         *
+         * @return GplusVerifyTokenVo
+         */
+        public function setIsNewAccessToken($isNewAccessToken)
+        {
+            $this->_isNewAccessToken = $isNewAccessToken;
+
+            return $this;
+        }
+
+        // ######################################
+
+        /**
+         * @return bool
+         */
+        public function getIsNewAccessToken()
+        {
+            return $this->_isNewAccessToken === TRUE ? TRUE : FALSE;
         }
 
         // ######################################

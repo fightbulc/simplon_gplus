@@ -21,4 +21,7 @@
 
         CONST FAILED_FETCHING_USER_DETAILS_CODE = 6;
         CONST FAILED_FETCHING_USER_DETAILS_MESSAGE = 'An error occured while trying to fetch the user details.';
+
+        CONST FAILED_REFRESHING_ACCESSTOKEN_CODE = 7;
+        CONST FAILED_REFRESHING_ACCESSTOKEN_MESSAGE = 'Failed to refresh accessToken. Message received: ';
     }
