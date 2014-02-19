@@ -146,19 +146,27 @@
         // ######################################
 
         /**
-         * @param $userId
          * @param $accessToken
          *
          * @return bool|GplusPersonVo
          */
-        public function getUserDetails($userId, $accessToken)
+        public function getUserDetails($accessToken)
         {
+            $gplusVerifyTokenVo = $this->verifyAccessToken($accessToken);
+
+            if ($gplusVerifyTokenVo === FALSE)
+            {
+                return FALSE;
+            }
+
+            // ----------------------------------
+
             $params = [
                 'access_token' => $accessToken,
             ];
 
             // build path with userId
-            $path = str_replace('{userId}', $userId, GplusConstants::PATH_PEOPLE_DETAILS);
+            $path = str_replace('{userId}', $gplusVerifyTokenVo->getUserId(), GplusConstants::PATH_PEOPLE_DETAILS);
 
             // request
             $response = GplusRequest::get($path, $params);

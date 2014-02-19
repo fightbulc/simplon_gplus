@@ -6,6 +6,9 @@
 
     class GplusPersonVo
     {
+        protected $_rawData;
+        protected $_accessToken;
+        protected $_refreshToken;
         protected $_id;
         protected $_displayName;
         protected $_emails;
@@ -33,6 +36,80 @@
                 ->setConditionByKey('language', function ($val) { $this->setLanguage($val); })
                 ->setConditionByKey('verified', function ($val) { $this->setVerified($val); })
                 ->run();
+
+            $this->setRawData($data);
+        }
+
+        // ######################################
+
+        /**
+         * @param mixed $rawData
+         *
+         * @return GplusPersonVo
+         */
+        public function setRawData($rawData)
+        {
+            $this->_rawData = $rawData;
+
+            return $this;
+        }
+
+        // ######################################
+
+        /**
+         * @return array
+         */
+        public function getRawData()
+        {
+            return (array)$this->_rawData;
+        }
+
+        // ######################################
+
+        /**
+         * @param mixed $accessToken
+         *
+         * @return GplusPersonVo
+         */
+        public function setAccessToken($accessToken)
+        {
+            $this->_accessToken = $accessToken;
+
+            return $this;
+        }
+
+        // ######################################
+
+        /**
+         * @return string
+         */
+        public function getAccessToken()
+        {
+            return (string)$this->_accessToken;
+        }
+
+        // ######################################
+
+        /**
+         * @param mixed $refreshToken
+         *
+         * @return GplusPersonVo
+         */
+        public function setRefreshToken($refreshToken)
+        {
+            $this->_refreshToken = $refreshToken;
+
+            return $this;
+        }
+
+        // ######################################
+
+        /**
+         * @return string
+         */
+        public function getRefreshToken()
+        {
+            return (string)$this->_refreshToken;
         }
 
         // ######################################
