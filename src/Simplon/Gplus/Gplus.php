@@ -62,13 +62,16 @@
             $urlRedirect = $this->_getAuthVo()
                 ->getUrlRedirect();
 
+            $approvalPrompt = $this->_getAuthVo()
+                ->getApprovalPrompt();
+
             $params = [
                 'scope'           => join(' ', $scope),
                 'redirect_uri'    => $urlRedirect,
                 'client_id'       => $clientId,
+                'approval_prompt' => $approvalPrompt,
                 'state'           => 'auth',
                 'response_type'   => 'code',
-                'approval_prompt' => 'force',
                 'access_type'     => 'offline',
             ];
 

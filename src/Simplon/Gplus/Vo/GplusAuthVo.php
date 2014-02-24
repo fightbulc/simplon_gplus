@@ -2,11 +2,15 @@
 
     namespace Simplon\Gplus\Vo;
 
+    use Simplon\Gplus\GplusConstants;
+    use Simplon\Helper\VoSetDataFactory;
+
     class GplusAuthVo
     {
         protected $_clientId;
         protected $_clientSecret;
         protected $_urlRedirect;
+        protected $_approvalPrompt = GplusConstants::APPROVAL_PROMPT_AUTO;
 
         // ######################################
 
@@ -17,10 +21,12 @@
          */
         public function setData(array $data)
         {
-            $this
-                ->setClientId($data['clientId'])
-                ->setClientSecret($data['clientSecret'])
-                ->setUrlRedirect($data['urlRedirect']);
+            (new VoSetDataFactory())
+                ->setRawData($data)
+                ->setConditionByKey('clientId', function ($val) { $this->setClientId($val); })
+                ->setConditionByKey('clientSecret', function ($val) { $this->setClientSecret($val); })
+                ->setConditionByKey('urlRedirect', function ($val) { $this->setUrlRedirect($val); })
+                ->run();
 
             return $this;
         }
@@ -63,6 +69,8 @@
             return $this;
         }
 
+        // ######################################
+
         /**
          * @return string
          */
@@ -70,6 +78,8 @@
         {
             return (string)$this->_clientId;
         }
+
+        // ######################################
 
         /**
          * @param mixed $clientSecret
@@ -83,11 +93,47 @@
             return $this;
         }
 
+        // ######################################
+
         /**
          * @return string
          */
         public function getClientSecret()
         {
             return (string)$this->_clientSecret;
+        }
+
+        // ######################################
+
+        /**
+         * @return GplusAuthVo
+         */
+        public function forceApprovalPrompt()
+        {
+            $this->_approvalPrompt = GplusConstants::APPROVAL_PROMPT_FORCE;
+
+            return $this;
+        }
+
+        // ######################################
+
+        /**
+         * @return GplusAuthVo
+         */
+        public function autoApprovalPrompt()
+        {
+            $this->_approvalPrompt = GplusConstants::APPROVAL_PROMPT_AUTO;
+
+            return $this;
+        }
+
+        // ######################################
+
+        /**
+         * @return string
+         */
+        public function getApprovalPrompt()
+        {
+            return $this->_approvalPrompt;
         }
     }

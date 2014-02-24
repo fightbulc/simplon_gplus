@@ -4,6 +4,11 @@
 
     class GplusConstants
     {
+        CONST APPROVAL_PROMPT_AUTO = 'auto';
+        CONST APPROVAL_PROMPT_FORCE = 'force';
+
+        // --------------------------------------
+
         CONST DOMAIN_API = 'https://www.googleapis.com';
         CONST DOMAIN_ACCOUNTS = 'https://accounts.google.com';
 
